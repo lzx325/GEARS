@@ -134,6 +134,7 @@ class GEARS:
                          G_coexpress = None,
                          G_coexpress_weight = None,
                          no_perturb = False, 
+                         no_GO = False,
                         ):
         """
         Initialize the model
@@ -193,7 +194,8 @@ class GEARS:
                        'device': self.device,
                        'num_genes': self.num_genes,
                        'num_perts': self.num_perts,
-                       'no_perturb': no_perturb
+                       'no_perturb': no_perturb,
+                       'no_GO': no_GO,
                       }
         
         if self.wandb:
@@ -232,7 +234,6 @@ class GEARS:
             sim_network = GeneSimNetwork(edge_list, self.pert_list, node_map = self.node_map_pert)
             self.config['G_go'] = sim_network.edge_index
             self.config['G_go_weight'] = sim_network.edge_weight
-            
         self.model = GEARS_Model(self.config).to(self.device)
         self.best_model = deepcopy(self.model)
         
@@ -586,7 +587,7 @@ class GEARS:
         test_metrics, test_pert_res = compute_metrics(test_res)    
         log = "Best performing model: Test Top 20 DE MSE: {:.4f}"
         print_sys(log.format(test_metrics['mse_de']))
-        
+        print_sys(test_metrics)
         if self.wandb:
             metrics = ['mse', 'pearson']
             for m in metrics:

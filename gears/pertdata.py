@@ -196,7 +196,7 @@ class PertData:
             self.ctrl_adata = self.adata[self.adata.obs['condition'] == 'ctrl']
             self.gene_names = self.adata.var.gene_name
             
-            
+
             print_sys("Creating pyg object for each cell in the data...")
             self.create_dataset_file()
             print_sys("Saving new dataset pyg object at " + dataset_fname) 
@@ -263,7 +263,8 @@ class PertData:
                       combo_single_split_test_set_fraction = 0.1,
                       test_perts = None,
                       only_test_set_perts = False,
-                      test_pert_genes = None):
+                      test_pert_genes = None,
+                      split_path = None):
 
         """
         Prepare splits for training and testing
@@ -307,12 +308,13 @@ class PertData:
         split_folder = os.path.join(self.dataset_path, 'splits')
         if not os.path.exists(split_folder):
             os.mkdir(split_folder)
-        split_file = self.dataset_name + '_' + split + '_' + str(seed) + '_' \
-                                       +  str(train_gene_set_size) + '.pkl'
-        split_path = os.path.join(split_folder, split_file)
+        if split_path is None:
+            split_file = self.dataset_name + '_' + split + '_' + str(seed) + '_' \
+                                        +  str(train_gene_set_size) + '.pkl'
+            split_path = os.path.join(split_folder, split_file)
         
-        if test_perts:
-            split_path = split_path[:-4] + '_' + test_perts + '.pkl'
+            if test_perts:
+                split_path = split_path[:-4] + '_' + test_perts + '.pkl'
         
         if os.path.exists(split_path):
             print_sys("Local copy of split is detected. Loading...")
@@ -371,8 +373,7 @@ class PertData:
                 adata = self.adata
                 adata.obs['split'] = 'test'
             
-            set2conditions = dict(adata.obs.groupby('split').agg({'condition':
-                                                        lambda x: x}).condition)
+            set2conditions = dict(adata.obs.groupby('split').agg({'condition': lambda x: x}).condition)
             set2conditions = {i: j.unique().tolist() for i,j in set2conditions.items()} 
             pickle.dump(set2conditions, open(split_path, "wb"))
             print_sys("Saving new splits at " + split_path)

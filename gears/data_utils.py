@@ -154,11 +154,11 @@ class DataSplitter():
                         p != 'ctrl']
         
         if self.split_type == 'simulation':
-            train, test, test_subgroup = self.get_simulation_split(unique_perts,
+            train1, test, test_subgroup = self.get_simulation_split(unique_perts,
                                                                   train_gene_set_size,
                                                                   combo_seen2_train_frac, 
                                                                   seed, test_perts, only_test_set_perts)
-            train, val, val_subgroup = self.get_simulation_split(train,
+            train, val, val_subgroup = self.get_simulation_split(train1,
                                                                   0.9,
                                                                   0.9,
                                                                   seed)

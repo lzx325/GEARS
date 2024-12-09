@@ -58,9 +58,9 @@ def dataverse_download(url, save_path):
     """
     
     if os.path.exists(save_path):
-        print_sys('Found local copy...')
+        print_sys(f'Found local copy {save_path} ...')
     else:
-        print_sys("Downloading...")
+        print_sys(f"Downloading to {save_path} ...")
         response = requests.get(url, stream=True)
         total_size_in_bytes= int(response.headers.get('content-length', 0))
         block_size = 1024
@@ -83,7 +83,7 @@ def zip_data_download_wrapper(url, save_path, data_path):
     """
 
     if os.path.exists(save_path):
-        print_sys('Found local copy...')
+        print_sys(f'Found local copy {save_path} ...')
     else:
         dataverse_download(url, save_path + '.zip')
         print_sys('Extracting zip file...')
@@ -103,7 +103,7 @@ def tar_data_download_wrapper(url, save_path, data_path):
     """
 
     if os.path.exists(save_path):
-        print_sys('Found local copy...')
+        print_sys(f'Found local copy {save_path} ...')
     else:
         dataverse_download(url, save_path + '.tar.gz')
         print_sys('Extracting tar file...')

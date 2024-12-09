@@ -54,6 +54,7 @@ class GEARS_Model(torch.nn.Module):
         self.indv_out_hidden_size = args['decoder_hidden_size']
         self.num_layers_gene_pos = args['num_gene_gnn_layers']
         self.no_perturb = args['no_perturb']
+        self.no_GO = args['no_GO']
         self.pert_emb_lambda = 0.2
         
         # perturbation positional embedding added only to the perturbed genes
@@ -129,11 +130,12 @@ class GEARS_Model(torch.nn.Module):
         else:
             num_graphs = len(data.batch.unique())
 
-            ## get base gene embeddings
+            # get base gene embeddings (empty gene embeddings)
             emb = self.gene_emb(torch.LongTensor(list(range(self.num_genes))).repeat(num_graphs, ).to(self.args['device']))        
             emb = self.bn_emb(emb)
             base_emb = self.emb_trans(emb)        
 
+            # add co-expression GNN to base gene embeddings
             pos_emb = self.emb_pos(torch.LongTensor(list(range(self.num_genes))).repeat(num_graphs, ).to(self.args['device']))
             for idx, layer in enumerate(self.layers_emb_pos):
                 pos_emb = layer(pos_emb, self.G_coexpress, self.G_coexpress_weight)
@@ -152,17 +154,19 @@ class GEARS_Model(torch.nn.Module):
                         pert_index.append([idx, j])
             pert_index = torch.tensor(pert_index).T
 
+            # compute perturbation embeddings for all perturbations
             pert_global_emb = self.pert_emb(torch.LongTensor(list(range(self.num_perts))).to(self.args['device']))        
-
             ## augment global perturbation embedding with GNN
-            for idx, layer in enumerate(self.sim_layers):
-                pert_global_emb = layer(pert_global_emb, self.G_sim, self.G_sim_weight)
-                if idx < self.num_layers - 1:
-                    pert_global_emb = pert_global_emb.relu()
+            if not self.no_GO:
+                for idx, layer in enumerate(self.sim_layers):
+                    pert_global_emb = layer(pert_global_emb, self.G_sim, self.G_sim_weight)
+                    if idx < self.num_layers - 1:
+                        pert_global_emb = pert_global_emb.relu()
+
 
             ## add global perturbation embedding to each gene in each cell in the batch
             base_emb = base_emb.reshape(num_graphs, self.num_genes, -1)
-
+            # add perturbation embeddings (only those acutually applied to the cell) to base gene embeddings
             if pert_index.shape[0] != 0:
                 ### in case all samples in the batch are controls, then there is no indexing for pert_index.
                 pert_track = {}
@@ -211,6 +215,5 @@ class GEARS_Model(torch.nn.Module):
                 out_logvar = self.uncertainty_w(base_emb)
                 out_logvar = torch.split(torch.flatten(out_logvar), self.num_genes)
                 return torch.stack(out), torch.stack(out_logvar)
-            
             return torch.stack(out)
         
